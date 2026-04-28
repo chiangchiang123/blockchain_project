@@ -1,3 +1,4 @@
+import "dotenv/config";
 import hardhatToolboxMochaEthersPlugin from "@nomicfoundation/hardhat-toolbox-mocha-ethers";
 import { configVariable, defineConfig } from "hardhat/config";
 
@@ -24,15 +25,11 @@ export default defineConfig({
       type: "edr-simulated",
       chainType: "l1",
     },
-    hardhatOp: {
-      type: "edr-simulated",
-      chainType: "op",
-    },
-    sepolia: {
-      type: "http",
-      chainType: "l1",
-      url: configVariable("SEPOLIA_RPC_URL"),
-      accounts: [configVariable("SEPOLIA_PRIVATE_KEY")],
-    },
+    // ganache: {
+    //   type: "http",
+    //   chainType: "l1",
+    //   url: configVariable("GANACHE_LOCALHOST_URL"),
+    //   accounts: [configVariable("GANACHE_PRIVATE_KEY")],
+    // },
   },
 });

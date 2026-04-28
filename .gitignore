@@ -355,3 +355,6 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*# Streamlit
 .streamlit/secrets.toml
+
+# test
+test/
