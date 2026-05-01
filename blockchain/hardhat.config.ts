@@ -1,9 +1,8 @@
-import "dotenv/config";
-import hardhatToolboxMochaEthersPlugin from "@nomicfoundation/hardhat-toolbox-mocha-ethers";
+import hardhatToolboxViemPlugin from "@nomicfoundation/hardhat-toolbox-viem";
 import { configVariable, defineConfig } from "hardhat/config";
 
 export default defineConfig({
-  plugins: [hardhatToolboxMochaEthersPlugin],
+  plugins: [hardhatToolboxViemPlugin],
   solidity: {
     profiles: {
       default: {
@@ -25,11 +24,19 @@ export default defineConfig({
       type: "edr-simulated",
       chainType: "l1",
     },
-    // ganache: {
-    //   type: "http",
-    //   chainType: "l1",
-    //   url: configVariable("GANACHE_LOCALHOST_URL"),
-    //   accounts: [configVariable("GANACHE_PRIVATE_KEY")],
-    // },
+    hardhatOp: {
+      type: "edr-simulated",
+      chainType: "op",
+    },
+    localhost: {
+      type: "http",
+      url: "http://127.0.0.1:8545",
+    },
+    sepolia: {
+      type: "http",
+      chainType: "l1",
+      url: configVariable("SEPOLIA_RPC_URL"),
+      accounts: [configVariable("SEPOLIA_PRIVATE_KEY")],
+    },
   },
 });

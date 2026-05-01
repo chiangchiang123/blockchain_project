@@ -1,0 +1,49 @@
+{
+  "_format": "hh3-sol-build-info-1",
+  "id": "solc-0_8_28-ebfb95848173458f81d4a4418be9cc6786a8d949",
+  "solcVersion": "0.8.28",
+  "solcLongVersion": "0.8.28+commit.7893614a",
+  "compilerType": "solc",
+  "toolVersions": {
+    "hardhat": "3.4.3"
+  },
+  "userSourceNameMap": {
+    "contracts/Confession.sol": "project/contracts/Confession.sol"
+  },
+  "input": {
+    "language": "Solidity",
+    "settings": {
+      "evmVersion": "cancun",
+      "optimizer": {
+        "enabled": true,
+        "runs": 200
+      },
+      "outputSelection": {
+        "*": {
+          "": [
+            "ast"
+          ],
+          "*": [
+            "abi",
+            "evm.bytecode.linkReferences",
+            "evm.bytecode.object",
+            "evm.bytecode.opcodes",
+            "evm.bytecode.sourceMap",
+            "evm.deployedBytecode.immutableReferences",
+            "evm.deployedBytecode.linkReferences",
+            "evm.deployedBytecode.object",
+            "evm.deployedBytecode.opcodes",
+            "evm.deployedBytecode.sourceMap",
+            "evm.methodIdentifiers"
+          ]
+        }
+      },
+      "remappings": []
+    },
+    "sources": {
+      "project/contracts/Confession.sol": {
+        "content": "// SPDX-License-Identifier: UNLICENSED \npragma solidity ^0.8.28;\n\ncontract ConfessionContract {\n\n    struct Confession {\n        string encryptedContent; // 存放前端加密過後的 AES 密文字串\n        uint256 timestamp;       // 紀錄寫入區塊鏈的時間戳記\n    }\n\n    mapping(address => Confession[]) private userConfessions;\n\n    event ConfessionAdded(address indexed user, uint256 timestamp);\n\n\n    function addConfession(string calldata _encryptedContent) external {\n        // 將新的告解推入該使用者的陣列中\n        userConfessions[msg.sender].push(Confession({\n            encryptedContent: _encryptedContent,\n            timestamp: block.timestamp\n        }));\n\n        emit ConfessionAdded(msg.sender, block.timestamp);\n    }\n\n\n    function getMyConfessions() external view returns (Confession[] memory) {\n        return userConfessions[msg.sender];\n    }\n}"
+      }
+    }
+  }
+}

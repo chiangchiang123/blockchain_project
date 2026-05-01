@@ -1,51 +1,30 @@
 // SPDX-License-Identifier: UNLICENSED 
 pragma solidity ^0.8.28;
 
-contract Confession {
+contract ConfessionContract {
 
-struct Note {
-    string content;
-    uint timestamp;
-}
+    struct Confession {
+        string encryptedContent; // 存放前端加密過後的 AES 密文字串
+        uint256 timestamp;       // 紀錄寫入區塊鏈的時間戳記
+    }
 
-// address public owner;
+    mapping(address => Confession[]) private userConfessions;
 
-mapping(address => Note[]) private userNotes;
+    event ConfessionAdded(address indexed user, uint256 timestamp);
 
-event ConfessionAdded(
-    address user,
-    uint timestamp
-);
 
-// constructor() {
-//     owner = msg.sender;
-// }
+    function addConfession(string calldata _encryptedContent) external {
+        // 將新的告解推入該使用者的陣列中
+        userConfessions[msg.sender].push(Confession({
+            encryptedContent: _encryptedContent,
+            timestamp: block.timestamp
+        }));
 
-// modifier onlyOwner() {
-//     require(msg.sender == owner, "Not owner");
-//     _;
-// }
+        emit ConfessionAdded(msg.sender, block.timestamp);
+    }
 
-function addConfession(string memory _content) public {
-    userNotes[msg.sender].push(
-        Note(_content, block.timestamp)
-    );
 
-    emit ConfessionAdded(
-        msg.sender,
-        block.timestamp
-    );
-}
-
-function getMyConfession(uint index) public view returns(string memory){
-    return userNotes[msg.sender][index].content;
-}
-
-// function clearAll(address user)
-//     public
-//     onlyOwner
-// {
-//     delete userNotes[user];
-// }
-
+    function getMyConfessions() external view returns (Confession[] memory) {
+        return userConfessions[msg.sender];
+    }
 }
