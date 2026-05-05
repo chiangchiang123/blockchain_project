@@ -10,19 +10,29 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@web3auth/modal": "^10.16.0",
+    "@web3auth/openlogin-adapter": "^8.12.4",
+    "crypto-js": "^4.2.0",
+    "framer-motion": "^12.38.0",
+    "lucide-react": "^1.14.0",
+    "ox": "^0.14.20",
     "react": "^19.2.5",
-    "react-dom": "^19.2.5"
+    "react-dom": "^19.2.5",
+    "react-router-dom": "^7.14.2"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@types/crypto-js": "^4.2.2",
     "@types/node": "^24.12.2",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
+    "buffer": "^6.0.3",
     "eslint": "^10.2.1",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.5.0",
+    "process": "^0.11.10",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.58.2",
     "vite": "^8.0.10"
