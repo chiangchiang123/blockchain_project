@@ -13,7 +13,7 @@ export default function HomePage() {
   const [mood, setMood] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const navigate = useNavigate();
-  const { pin, walletAddress } = useAuth();
+  const { encryptionKey, walletAddress } = useAuth();
 
   const { provider } = useWeb3Auth();
 
@@ -23,7 +23,7 @@ export default function HomePage() {
   });
 
   async function goPlayer() {
-    if (!pin || !walletAddress) {
+    if (!encryptionKey || !walletAddress) {
       alert("Please login first.");
       navigate("/login");
       return;
@@ -34,8 +34,8 @@ export default function HomePage() {
     try {
       setIsProcessing(true); // 開始上鏈，顯示 Loading
 
-      // 1. 本地加密 (維持你原本極佳的隱私邏輯)
-      const encrypted = encryptText(mood.trim(), pin);
+      // 1. 本地加密：用錢包簽名推導出的 key 加密
+      const encrypted = encryptText(mood.trim(), encryptionKey);
 
       // 2. 將密文與 salt 打包成一個 JSON 字串準備上鏈
       const payloadString = JSON.stringify({
@@ -68,8 +68,6 @@ export default function HomePage() {
         account: walletAddress as `0x${string}`,
         message: { raw: messageHash }
       });
-
-      console.log("簽名成功:", signature);
 
       // 3. 將資料丟給你的 FastAPI 後端，請它幫忙上鏈
       const response = await fetch("http://localhost:8000/api/relay-confession", {

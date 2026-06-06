@@ -1,15 +1,13 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  useWeb3AuthConnect,
-  useWeb3Auth,
-} from "@web3auth/modal/react";
+import { useWeb3AuthConnect, useWeb3Auth } from "@web3auth/modal/react";
+import { createWalletClient, custom } from "viem";
+import { hardhat } from "viem/chains";
 import { useAuth } from "../context/AuthContext";
-import { encryptText, decryptText } from "../utils/cryptoMood";
 
 export default function LoginPage() {
-  const [pin, setPin] = useState("");
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
+  const [isSigning, setIsSigning] = useState(false);
 
   const navigate = useNavigate();
   const { login } = useAuth();
@@ -27,8 +25,6 @@ export default function LoginPage() {
 
       const address = accounts[0];
 
-      console.log("我的完整錢包地址是：", address);
-
       if (!address) {
         alert("Wallet address not found.");
         return;
@@ -40,61 +36,38 @@ export default function LoginPage() {
       alert("Wallet login failed.");
     }
   }
- 
 
-  function getPinVerifierKey(walletAddress: string) {
-  return `pinVerifier:${walletAddress}`;
-}
-
-async function handleContinue() {
-  if (!walletAddress|| !isConnected || !provider) {
-    alert("Please connect wallet first.");
-    return;
-  }
-
-  if (!pin.trim()) {
-    alert("Please enter your PIN.");
-    return;
-  }
-
-  const verifierKey = getPinVerifierKey(walletAddress);
-  const savedVerifier = localStorage.getItem(verifierKey);
-  //pin+salt=key
-//pin被verify與wallet連結
-
-  // 第一次使用這個 wallet：建立 PIN verifier
-  if (!savedVerifier) {
-    const verifier = encryptText("PIN_OK", pin);
-
-    localStorage.setItem(
-      verifierKey,
-      JSON.stringify({
-        encrypted: verifier.encrypted,
-        salt: verifier.salt,
-      })
-    );
-
-    login(walletAddress, pin);
-    navigate("/home");
-    return;
-  }
-
-  // 不是第一次：驗證 PIN
-  try {
-    const parsed = JSON.parse(savedVerifier);
-    const result = decryptText(parsed.encrypted, pin, parsed.salt);
-
-    if (result !== "PIN_OK") {
-      alert("Wrong PIN.");
+  async function handleContinue() {
+    if (!walletAddress || !isConnected || !provider) {
+      alert("Please connect wallet first.");
       return;
     }
 
-    login(walletAddress, pin);
-    navigate("/home");
-  } catch {
-    alert("Wrong PIN.");
+    try {
+      setIsSigning(true);
+
+      // 使用固定訊息，讓同一個錢包在任何裝置都能推導出相同的簽名
+      // RFC 6979 確定性 ECDSA：相同私鑰 + 相同訊息 = 相同簽名
+      const walletClient = createWalletClient({
+        chain: hardhat,
+        transport: custom(provider),
+      });
+
+      const signature = await walletClient.signMessage({
+        account: walletAddress as `0x${string}`,
+        message: "confession-encrypt-v1",
+      });
+
+      // signature 就是加密 key 的來源，不需要儲存在任何地方
+      login(walletAddress, signature);
+      navigate("/home");
+    } catch (err) {
+      console.error(err);
+      alert("Signing failed. Please try again.");
+    } finally {
+      setIsSigning(false);
+    }
   }
-}
 
   return (
     <div style={styles.container}>
@@ -112,16 +85,8 @@ async function handleContinue() {
             Connected: {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
           </p>
 
-          <input
-            type="password"
-            placeholder="Enter PIN"
-            value={pin}
-            onChange={(e) => setPin(e.target.value)}
-            style={styles.input}
-          />
-
-          <button style={styles.button} onClick={handleContinue}>
-            Continue
+          <button style={styles.button} onClick={handleContinue} disabled={isSigning}>
+            {isSigning ? "Signing..." : "Continue"}
           </button>
         </>
       )}
@@ -155,17 +120,6 @@ const styles: { [key: string]: React.CSSProperties } = {
     color: "#6C5019",
     fontSize: "18px",
     cursor: "pointer",
-  },
-  input: {
-    width: "320px",
-    height: "48px",
-    borderRadius: "30px",
-    border: "none",
-    outline: "none",
-    textAlign: "center",
-    fontSize: "18px",
-    color: "#6C5019",
-    background: "rgba(255,255,255,0.8)",
   },
   walletText: {
     color: "#6C5019",

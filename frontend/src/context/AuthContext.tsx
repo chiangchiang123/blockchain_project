@@ -2,8 +2,8 @@ import { createContext, useContext, useState } from "react";
 
 type AuthContextType = {
   walletAddress: string | null;
-  pin: string | null;
-  login: (walletAddress: string, pin: string) => void;
+  encryptionKey: string | null;
+  login: (walletAddress: string, encryptionKey: string) => void;
   logout: () => void;
 };
 
@@ -11,20 +11,20 @@ const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
-  const [pin, setPin] = useState<string | null>(null);
+  const [encryptionKey, setEncryptionKey] = useState<string | null>(null);
 
-  function login(walletAddress: string, pin: string) {
+  function login(walletAddress: string, encryptionKey: string) {
     setWalletAddress(walletAddress);
-    setPin(pin);
+    setEncryptionKey(encryptionKey);
   }
 
   function logout() {
     setWalletAddress(null);
-    setPin(null);
+    setEncryptionKey(null);
   }
 
   return (
-    <AuthContext.Provider value={{ walletAddress, pin, login, logout }}>
+    <AuthContext.Provider value={{ walletAddress, encryptionKey, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

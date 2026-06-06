@@ -8,7 +8,7 @@ import { decryptText } from "../utils/cryptoMood";
 export default function PlayerPage() {
   const navigate = useNavigate();
   const location = useLocation(); // 取得從 HomePage 傳遞過來的 state
-  const { pin } = useAuth(); // walletAddress 這裡其實可以不用了，因為 HomePage 抓資料時已經過濾過了
+  const { encryptionKey } = useAuth();
 
   // 1. 直接從 location.state 初始化 records 與 index，不再依賴 localStorage
   const [records] = useState<any[]>(() => {
@@ -42,22 +42,21 @@ export default function PlayerPage() {
       return;
     }
 
-    if (!pin) {
+    if (!encryptionKey) {
       alert("Please log in again");
-      navigate("/login"); // 如果遺失 pin，強制導回登入頁
+      navigate("/login");
       return;
     }
 
     try {
-      // 使用從區塊鏈抓下來的 encryptedMood 與 salt 進行解密
-      const mood = decryptText(record.encryptedMood, pin, record.salt);
+      const mood = decryptText(record.encryptedMood, encryptionKey, record.salt);
       setDecryptedMood(mood);
       setCanShowPlayer(true);
     } catch {
       setDecryptedMood("You are too shy.");
       setCanShowPlayer(false);
     }
-  }, [record, pin, navigate]);
+  }, [record, encryptionKey, navigate]);
 
   // 如果正在導向首頁，不渲染畫面避免報錯閃爍
   if (records.length === 0) return null;

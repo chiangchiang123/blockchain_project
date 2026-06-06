@@ -1,9 +1,9 @@
 import CryptoJS from "crypto-js";
 
-export function encryptText(text: string, pin: string) {
+export function encryptText(text: string, secret: string) {
   const salt = CryptoJS.lib.WordArray.random(16).toString();
 
-  const key = CryptoJS.PBKDF2(pin, salt, {
+  const key = CryptoJS.PBKDF2(secret, salt, {
     keySize: 256 / 32,
     iterations: 10000,
   }).toString();
@@ -13,8 +13,8 @@ export function encryptText(text: string, pin: string) {
   return { encrypted, salt };
 }
 
-export function decryptText(encrypted: string, pin: string, salt: string) {
-  const key = CryptoJS.PBKDF2(pin, salt, {
+export function decryptText(encrypted: string, secret: string, salt: string) {
+  const key = CryptoJS.PBKDF2(secret, salt, {
     keySize: 256 / 32,
     iterations: 10000,
   }).toString();
