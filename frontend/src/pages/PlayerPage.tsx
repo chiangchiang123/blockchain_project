@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { ChevronLeft, ChevronRight, Play, Pause, ExternalLink } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { decryptText } from "../utils/cryptoMood";
+import { formatDate } from "../utils/formatDate";
 
 export default function PlayerPage() {
   const navigate = useNavigate();
@@ -18,10 +19,9 @@ export default function PlayerPage() {
   const [decryptedMood, setDecryptedMood] = useState("");
   const [canShowPlayer, setCanShowPlayer] = useState(false);
 
-  // 音訊播放狀態
   const audioRef = useRef<HTMLAudioElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [progress, setProgress] = useState(0);      // 0–100
+  const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
 
   const record = records[index];
@@ -30,7 +30,6 @@ export default function PlayerPage() {
     if (records.length === 0) navigate("/home");
   }, [records, navigate]);
 
-  // 切換紀錄時重置解密結果與播放狀態
   useEffect(() => {
     setCanShowPlayer(false);
     setIsPlaying(false);
@@ -47,7 +46,6 @@ export default function PlayerPage() {
     }
   }, [record, encryptionKey, navigate]);
 
-  // 切換紀錄時自動播放新歌
   useEffect(() => {
     if (!canShowPlayer || !audioRef.current) return;
     audioRef.current.load();
@@ -90,33 +88,50 @@ export default function PlayerPage() {
 
   return (
     <div style={styles.container}>
-      {/* 背景文字：解密後的告解 */}
-      <div style={styles.backgroundText}>{decryptedMood}</div>
 
-      {/* 左右切換 */}
-      <button onClick={() => setIndex(i => Math.max(i - 1, 0))} style={styles.navBtn("left")}>
-        <ChevronLeft size={40} />
-      </button>
-      <button onClick={() => setIndex(i => Math.min(i + 1, records.length - 1))} style={styles.navBtn("right")}>
-        <ChevronRight size={40} />
-      </button>
+      {/* ── 上方：告解文字區 ── */}
+      <div style={styles.textArea}>
+        {/* 左右切換 */}
+        <button
+          onClick={() => setIndex(i => Math.max(i - 1, 0))}
+          style={styles.navBtn("left")}
+          disabled={index === 0}
+        >
+          <ChevronLeft size={32} />
+        </button>
 
-      {/* 音樂卡片 */}
+        {record?.timestamp && (
+          <div style={styles.dateLabel}>{formatDate(record.timestamp)}</div>
+        )}
+        <p style={styles.confessionText}>{decryptedMood}</p>
+
+        <button
+          onClick={() => setIndex(i => Math.min(i + 1, records.length - 1))}
+          style={styles.navBtn("right")}
+          disabled={index === records.length - 1}
+        >
+          <ChevronRight size={32} />
+        </button>
+      </div>
+
+      {/* ── 下方：播放器 bar ── */}
       {canShowPlayer && song && (
-        <div style={styles.card}>
-          {/* 封面圖 */}
+        <div style={styles.playerBar}>
+          {/* 封面 */}
           <img src={song.cover} alt={song.album} style={styles.cover} />
 
           {/* 歌曲資訊 */}
-          <div style={styles.info}>
-            <div style={styles.title}>{song.title}</div>
-            <div style={styles.artist}>{song.artist}</div>
-            <div style={styles.album}>{song.album}</div>
+          <div style={styles.meta}>
+            <div style={styles.songTitle}>{song.title}</div>
+            <div style={styles.songArtist}>{song.artist}</div>
           </div>
 
-          {/* 進度條 */}
-          <div style={styles.progressRow}>
-            <span style={styles.time}>{formatTime(audioRef.current?.currentTime ?? 0)}</span>
+          {/* 進度條 + 時間 */}
+          <div style={styles.progressArea}>
+            <div style={styles.timeRow}>
+              <span style={styles.time}>{formatTime(audioRef.current?.currentTime ?? 0)}</span>
+              <span style={styles.time}>{formatTime(duration)}</span>
+            </div>
             <input
               type="range"
               min={0}
@@ -125,23 +140,26 @@ export default function PlayerPage() {
               onChange={handleSeek}
               style={styles.slider}
             />
-            <span style={styles.time}>{formatTime(duration)}</span>
           </div>
 
-          {/* 播放 / 暫停 */}
+          {/* 播放鍵 */}
           <button onClick={togglePlay} style={styles.playBtn}>
-            {isPlaying ? <Pause size={22} /> : <Play size={22} />}
+            {isPlaying ? <Pause size={20} /> : <Play size={20} />}
           </button>
 
           {/* Spotify 連結 */}
           {song.spotifyUrl && (
-            <a href={song.spotifyUrl} target="_blank" rel="noopener noreferrer" style={styles.spotifyLink}>
-              <ExternalLink size={14} />
-              <span>在 Spotify 收聽</span>
+            <a
+              href={song.spotifyUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={styles.spotifyLink}
+              title="在 Spotify 收聽"
+            >
+              <ExternalLink size={18} />
             </a>
           )}
 
-          {/* 隱藏的 audio 元素 */}
           <audio
             ref={audioRef}
             src={song.previewUrl}
@@ -163,109 +181,135 @@ const styles = {
     position: "fixed" as const,
     inset: 0,
     display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
+    flexDirection: "column" as const,
     overflow: "hidden",
   },
 
-  backgroundText: {
+  // 上方文字區：佔滿剩餘高度
+  textArea: {
+    flex: 1,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    position: "relative" as const,
+    padding: "80px 160px",
+  },
+
+  dateLabel: {
     position: "absolute" as const,
-    width: "1137px",
-    color: "#FFFFFF",
-    opacity: 0.3,
-    fontFamily: '"DM Serif Text", serif',
-    fontSize: "128px",
-    fontWeight: 400,
-    lineHeight: "100px",
-    textAlign: "center" as const,
+    top: "28px",
     left: "50%",
-    top: "50%",
-    transform: "translate(-50%, -50%)",
-    pointerEvents: "none" as const,
+    transform: "translateX(-50%)",
+    color: "rgba(255,255,255,0.4)",
+    fontSize: "13px",
+    letterSpacing: "0.08em",
+    whiteSpace: "nowrap" as const,
+  },
+
+  confessionText: {
+    color: "#FFFFFF",
+    opacity: 0.88,
+    fontFamily: '"DM Serif Text", serif',
+    fontSize: "clamp(28px, 4vw, 64px)",
+    fontWeight: 400,
+    lineHeight: 1.5,
+    textAlign: "center" as const,
+    maxWidth: "820px",
+    margin: 0,
+    wordBreak: "break-word" as const,
   },
 
   navBtn: (side: "left" | "right"): React.CSSProperties => ({
     position: "absolute",
-    [side]: "180px",
+    [side]: "40px",
     top: "50%",
     transform: "translateY(-50%)",
-    width: "64px",
-    height: "64px",
+    width: "52px",
+    height: "52px",
     borderRadius: "50%",
     border: "1px solid rgba(255,255,255,0.2)",
-    background: "rgba(98, 73, 23, 0.7)",
+    background: "rgba(98, 73, 23, 0.6)",
     color: "#fff",
     cursor: "pointer",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
+    transition: "opacity 0.2s",
   }),
 
-  card: {
-    width: "280px",
-    background: "rgba(30, 20, 10, 0.85)",
-    backdropFilter: "blur(12px)",
-    padding: "20px",
-    borderRadius: "20px",
-    color: "#fff",
-    zIndex: 2,
-    boxShadow: "0 24px 60px rgba(0,0,0,0.5)",
+  // 下方播放器 bar
+  playerBar: {
+    height: "90px",
+    background: "rgba(10, 8, 4, 0.6)",
+    backdropFilter: "blur(20px)",
+    borderTop: "1px solid rgba(255,255,255,0.08)",
     display: "flex",
-    flexDirection: "column" as const,
-    gap: "14px",
+    alignItems: "center",
+    padding: "0 28px",
+    gap: "20px",
+    flexShrink: 0,
   },
 
   cover: {
-    width: "100%",
-    aspectRatio: "1 / 1",
+    width: "58px",
+    height: "58px",
+    borderRadius: "8px",
     objectFit: "cover" as const,
-    borderRadius: "12px",
+    flexShrink: 0,
   },
 
-  info: {
+  meta: {
+    display: "flex",
+    flexDirection: "column" as const,
+    gap: "3px",
+    minWidth: "140px",
+  },
+
+  songTitle: {
+    fontSize: "14px",
+    fontWeight: 600,
+    color: "#fff",
+    whiteSpace: "nowrap" as const,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    maxWidth: "160px",
+  },
+
+  songArtist: {
+    fontSize: "12px",
+    color: "rgba(255,255,255,0.55)",
+    whiteSpace: "nowrap" as const,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    maxWidth: "160px",
+  },
+
+  progressArea: {
+    flex: 1,
     display: "flex",
     flexDirection: "column" as const,
     gap: "4px",
   },
 
-  title: {
-    fontSize: "17px",
-    fontWeight: 700,
-    color: "#fff",
-  },
-
-  artist: {
-    fontSize: "14px",
-    color: "rgba(255,255,255,0.75)",
-  },
-
-  album: {
-    fontSize: "12px",
-    color: "rgba(255,255,255,0.4)",
-  },
-
-  progressRow: {
+  timeRow: {
     display: "flex",
-    alignItems: "center",
-    gap: "8px",
+    justifyContent: "space-between",
   },
 
   time: {
     fontSize: "11px",
-    color: "rgba(255,255,255,0.5)",
-    minWidth: "30px",
+    color: "rgba(255,255,255,0.4)",
   },
 
   slider: {
-    flex: 1,
+    width: "100%",
     accentColor: "#37613C",
     cursor: "pointer",
   },
 
   playBtn: {
-    alignSelf: "center" as const,
-    width: "48px",
-    height: "48px",
+    width: "44px",
+    height: "44px",
     borderRadius: "50%",
     border: "none",
     background: "#37613C",
@@ -274,16 +318,15 @@ const styles = {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
+    flexShrink: 0,
   },
 
   spotifyLink: {
+    color: "rgba(255,255,255,0.45)",
     display: "flex",
     alignItems: "center",
-    justifyContent: "center",
-    gap: "6px",
-    fontSize: "12px",
-    color: "#37613C",
     textDecoration: "none",
-    opacity: 0.85,
+    flexShrink: 0,
+    transition: "color 0.2s",
   },
 };
