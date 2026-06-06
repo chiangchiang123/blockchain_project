@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { decryptText } from "../utils/cryptoMood";
@@ -7,58 +7,60 @@ import { decryptText } from "../utils/cryptoMood";
 
 export default function PlayerPage() {
   const navigate = useNavigate();
-  const {  pin, walletAddress } = useAuth();
+  const location = useLocation(); // 取得從 HomePage 傳遞過來的 state
+  const { pin } = useAuth(); // walletAddress 這裡其實可以不用了，因為 HomePage 抓資料時已經過濾過了
 
-  const [records] = useState(() => {
-  const data = JSON.parse(localStorage.getItem("moodRecords") || "[]");
-
-  return data.filter((record: any) => {
-    return (
-      record.walletAddress === walletAddress &&
-      record.encryptedMood &&
-      record.salt &&
-      record.song
-    );
+  // 1. 直接從 location.state 初始化 records 與 index，不再依賴 localStorage
+  const [records] = useState<any[]>(() => {
+    return location.state?.records || [];
   });
-});
 
   const [index, setIndex] = useState(() => {
-  const savedIndex = Number(localStorage.getItem("currentMoodIndex") || 0);
-  return Math.max(0, Math.min(savedIndex, records.length - 1));
-});
+    const passedIndex = location.state?.currentIndex || 0;
+    // 確保 index 不會超出陣列範圍
+    return Math.max(0, Math.min(passedIndex, records.length - 1));
+  });
 
   const [decryptedMood, setDecryptedMood] = useState("");
   const [canShowPlayer, setCanShowPlayer] = useState(false);
 
   const record = records[index];
 
+  // 2. 防呆機制：如果沒有資料（例如使用者直接在網址列輸入 /player），將其導回首頁
   useEffect(() => {
-  setCanShowPlayer(false);
+    if (records.length === 0) {
+      navigate("/home");
+    }
+  }, [records, navigate]);
 
-  if (!record) {
-    setDecryptedMood("尚未有心情紀錄");
-    return;
-  }
-
-  if (!pin) {
-    alert("please log in again");
-    return;
-  }
-
-//   if (!record.encryptedMood || !record.salt) {
-//     setDecryptedMood("這筆紀錄沒有內容");
-//     return;
-//   }
-
-  try {
-    const mood = decryptText(record.encryptedMood, pin, record.salt);
-    setDecryptedMood(mood);
-    setCanShowPlayer(true);
-  } catch {
-    setDecryptedMood("You are too shy.");
+  // 3. 解密邏輯 (這部分你原本寫得很好，幾乎不用動)
+  useEffect(() => {
     setCanShowPlayer(false);
-  }
-}, [record, pin]);
+
+    if (!record) {
+      setDecryptedMood("尚未有心情紀錄");
+      return;
+    }
+
+    if (!pin) {
+      alert("Please log in again");
+      navigate("/login"); // 如果遺失 pin，強制導回登入頁
+      return;
+    }
+
+    try {
+      // 使用從區塊鏈抓下來的 encryptedMood 與 salt 進行解密
+      const mood = decryptText(record.encryptedMood, pin, record.salt);
+      setDecryptedMood(mood);
+      setCanShowPlayer(true);
+    } catch {
+      setDecryptedMood("You are too shy.");
+      setCanShowPlayer(false);
+    }
+  }, [record, pin, navigate]);
+
+  // 如果正在導向首頁，不渲染畫面避免報錯閃爍
+  if (records.length === 0) return null;
 
   return (
     <div style={styles.container}>
@@ -80,19 +82,13 @@ export default function PlayerPage() {
         <ChevronRight size={40} />
       </button>
 
-      {canShowPlayer && record && (
+      {canShowPlayer && record && record.song && (
         <div style={styles.card}>
-        <img src={record.song.cover} style={styles.image} />
-        <h2>{record.song.title}</h2>
-        <p>{record.song.artist}</p>
-    </div>
-)}
-
-      {/* <div style={styles.card}>
-        <img src={record.song.cover} style={styles.image} />
-        <h2>{record.song.title}</h2>
-        <p>{record.song.artist}</p>
-      </div> */}
+          <img src={record.song.cover} style={styles.image} alt="album cover" />
+          <h2>{record.song.title}</h2>
+          <p>{record.song.artist}</p>
+        </div>
+      )}
     </div>
   );
 }

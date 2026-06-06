@@ -27,6 +27,8 @@ export default function LoginPage() {
 
       const address = accounts[0];
 
+      console.log("我的完整錢包地址是：", address);
+
       if (!address) {
         alert("Wallet address not found.");
         return;

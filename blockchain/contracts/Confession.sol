@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED 
 pragma solidity ^0.8.28;
+import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
+import "hardhat/console.sol"; 
 
 contract ConfessionContract {
 
@@ -26,5 +29,29 @@ contract ConfessionContract {
 
     function getMyConfessions() external view returns (Confession[] memory) {
         return userConfessions[msg.sender];
+    }
+
+    function addConfessionDelegated(
+        address _user,               // 真實使用者的地址
+        string calldata _content,    // 加密後的告解
+        bytes calldata _signature    // 使用者在前端簽的名
+    ) external {
+        // 1. 重建使用者在前端簽署的訊息 Hash
+        bytes32 messageHash = keccak256(abi.encodePacked(_user, _content));
+        bytes32 ethSignedMessageHash = MessageHashUtils.toEthSignedMessageHash(messageHash);
+
+        // 2. 利用 ECDSA 還原出是誰簽了這個名
+        address signer = ECDSA.recover(ethSignedMessageHash, _signature);
+
+        console.log(signer);
+        console.log(_user);
+        // 3. 驗證防偽：確認簽名的人，真的是傳進來的 _user
+        require(signer == _user, "Invalid signature!");
+
+        // 4. 驗證通過，幫該使用者寫入告解 (注意這裡是存進 _user 的陣列，不是 msg.sender)
+        userConfessions[_user].push(Confession({
+            encryptedContent: _content,
+            timestamp: block.timestamp
+        }));
     }
 }
