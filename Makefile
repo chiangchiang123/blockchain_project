@@ -13,8 +13,8 @@ SHELL := /bin/bash
 dev:
 	@echo ">>> [1/4] 啟動 Hardhat 本地節點..."
 	@cd blockchain && npx hardhat node &
-	@echo ">>> 等待節點就緒 (3s)..."
-	@sleep 3
+	@echo ">>> 等待節點就緒 (10s)..."
+	@sleep 10
 	@echo ">>> [2/4] 部署合約..."
 	@cd blockchain && npx hardhat ignition deploy ignition/modules/Confession.ts --network localhost --reset
 	@echo ">>> [3/4] 啟動 FastAPI 後端..."

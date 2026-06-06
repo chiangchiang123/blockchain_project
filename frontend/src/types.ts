@@ -10,6 +10,8 @@ export type Song = {
   artist: string;
   album: string;
   cover: string;
+  previewUrl: string;
+  spotifyUrl: string;
 };
 
 export type MoodRecord = {
