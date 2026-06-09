@@ -53,5 +53,7 @@ contract ConfessionContract {
             encryptedContent: _content,
             timestamp: block.timestamp
         }));
+        
+        emit ConfessionAdded(msg.sender, block.timestamp);
     }
 }
