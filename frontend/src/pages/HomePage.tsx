@@ -22,6 +22,23 @@ export default function HomePage() {
     transport: http('http://127.0.0.1:8545')
   });
 
+  async function loadHistoryRecords() {
+    const rawRecords = await publicClient.readContract({
+      address: CONTRACT_ADDRESS,
+      abi: ABI,
+      functionName: 'getMyConfessions',
+      account: walletAddress as `0x${string}`,
+    });
+
+    return (rawRecords as any[]).map(record => {
+      const data = JSON.parse(record.encryptedContent);
+      return {
+        ...data,
+        timestamp: Number(record.timestamp)
+      };
+    });
+  }
+
   async function goPlayer() {
     if (!encryptionKey || !walletAddress) {
       alert("Please login first.");
@@ -85,12 +102,14 @@ export default function HomePage() {
         throw new Error(errorData.detail || `後端錯誤 ${response.status}`);
       }
 
-      // 4. 上鏈成功，導向播放頁並帶入剛剛這筆紀錄
+      // 4. 上鏈成功後重新讀取全部紀錄，讓 Player 的上一筆/下一筆可以切換歷史
       const payload = JSON.parse(payloadString);
+      const records = await loadHistoryRecords().catch(() => [payload]);
+
       navigate("/player", {
         state: {
-          records: [payload],
-          currentIndex: 0,
+          records,
+          currentIndex: records.length - 1,
         },
       });
     } catch (error) {
@@ -110,30 +129,14 @@ export default function HomePage() {
     try {
       setIsProcessing(true);
 
-      // 1. 從區塊鏈讀取原始紀錄
-      const rawRecords = await publicClient.readContract({
-        address: CONTRACT_ADDRESS,
-        abi: ABI,
-        functionName: 'getMyConfessions',
-        account: walletAddress as `0x${string}`,
-      });
+      const parsedRecords = await loadHistoryRecords();
 
-      if ((rawRecords as any[]).length === 0) {
+      if (parsedRecords.length === 0) {
         alert("No mood records yet on the blockchain.");
         return;
       }
 
-      // 2. 將區塊鏈上的 JSON 字串解析回物件陣列
-      const parsedRecords = (rawRecords as any[]).map(record => {
-        // 區塊鏈上的 encryptedContent 是我們上傳的 JSON.stringify 字串
-        const data = JSON.parse(record.encryptedContent);
-        return {
-          ...data, // 包含 encryptedMood, salt, song
-          timestamp: Number(record.timestamp) // 區塊鏈的時間戳記是 BigInt，轉回 Number
-        };
-      });
-
-      // 3. 透過 React Router state 傳遞給 Player 頁面
+      // 透過 React Router state 傳遞給 Player 頁面
       // 我們將整個陣列傳過去，並指定從最後一筆（最新）開始播放
       navigate("/player", {
         state: {
