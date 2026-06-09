@@ -19,7 +19,7 @@ export function decryptText(encrypted: string, secret: string, salt: string) {
     iterations: 10000,
   }).toString();
 
-  const bytes = CryptoJS.AES.decrypt(encrypted, key);
+  const bytes = CryptoJS.AES.decrypt(encrypted, key); 
   const decrypted = bytes.toString(CryptoJS.enc.Utf8);
 
   if (!decrypted) {
